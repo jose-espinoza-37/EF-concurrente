@@ -1,0 +1,29 @@
+# Entorno virtual de Python
+.venv/
+venv/
+
+# Archivos comprimidos
+*.zip
+
+# PDFs
+*.pdf
+
+# Caché de Python
+__pycache__/
+*.py[cod]
+
+# Archivos compilados
+*.so
+
+# Configuración de VS Code
+.vscode/
+
+# Configuración de PyCharm
+.idea/
+
+# Variables de entorno
+.env
+
+# Archivos del sistema
+.DS_Store
+Thumbs.db

@@ -1,0 +1,3 @@
+Aqui se guarda el archivo de pesos entrenados (pesos_modelo.bin) al ejecutar
+run_training.sh. Este archivo NO se sube al repositorio/entrega si supera
+un tamano razonable; basta con el codigo fuente para regenerarlo.
