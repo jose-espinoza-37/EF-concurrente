@@ -1,0 +1,9 @@
+# Este proyecto usa UNICAMENTE la biblioteca estandar de Python 3
+# (socket, struct, threading, concurrent.futures, dataclasses, math, os,
+# datetime, argparse). No se requiere "pip install" de nada.
+#
+# Esto es intencional: el enunciado del proyecto exige usar solo las
+# librerias base que vienen con el lenguaje (sin frameworks de comunicacion
+# ni librerias externas de Machine Learning como numpy/PIL/OpenCV).
+#
+# Requisito: Python 3.8 o superior (se usan dataclasses y f-strings/tipado).
