@@ -1,9 +1,4 @@
-"""
-Lee config/cluster.properties -- EL MISMO archivo (mismos ids, hosts y
-puertos) que usan los nodos Java y C++. No se usa configparser porque el
-formato "clave=valor" plano de Java Properties no tiene secciones [tipo ini];
-se parsea a mano, es trivial.
-"""
+
 
 from typing import Dict, List, NamedTuple
 

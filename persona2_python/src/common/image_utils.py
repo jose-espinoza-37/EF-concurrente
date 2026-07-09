@@ -1,11 +1,4 @@
-"""
-Redimensiona un buffer RGB crudo por "nearest neighbor". Se implementa a
-mano (sin Pillow/OpenCV) por la misma razon que bmp.py: la biblioteca
-estandar de Python no trae procesamiento de imagenes. Nearest-neighbor es
-suficiente aqui porque el modelo ya fue entrenado sobre imagenes pequeñas
-(32x32) y lo unico que necesitamos es que la camara entregue el mismo
-tamaño de entrada que espera la red neuronal.
-"""
+
 
 
 def resize_nearest(rgb_bytes: bytes, src_w: int, src_h: int, dst_w: int, dst_h: int) -> bytes:

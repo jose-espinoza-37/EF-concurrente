@@ -1,11 +1,4 @@
-"""
-Acepta conexiones TCP entrantes de:
-  - otros nodos Raft (RV / AE)          -> peer-to-peer
-  - el Servidor de Testeo (PROPOSE)     -> cliente que escribe
-  - el Cliente Vigilante (GET_LOG)      -> cliente que lee
 
-Usa un hilo por conexion para que una conexion lenta no bloquee a las demas.
-"""
 
 import socket
 import threading

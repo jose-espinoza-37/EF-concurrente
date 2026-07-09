@@ -1,16 +1,4 @@
-"""
-Utilidad de "framing" para el protocolo de wire usado por TODO el sistema.
 
-IMPORTANTE: este formato es el contrato entre los 3 lenguajes (Java, Python
-y C++). Debe coincidir EXACTAMENTE con cc4p1.common.Frame (Java):
-
-    [4 bytes]  longitud del payload en bytes, entero SIN SIGNO big-endian
-    [N bytes]  payload
-
-Para los mensajes de control (texto) el payload es UTF-8. Para transferencias
-binarias (como los frames de las cámaras) el payload son bytes crudos con su
-propio sub-formato interno (ver camaras/receptor_camara.py).
-"""
 
 import socket
 import struct

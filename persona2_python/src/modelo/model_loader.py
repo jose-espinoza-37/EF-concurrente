@@ -1,26 +1,4 @@
-"""
-Lee el archivo de pesos generado por cc4p1.entrenamiento.ModelPersistence
-(Java). El formato (documentado tambien en el .java) es:
 
-    [4 bytes]  MAGIC        = 0x43433450  ("CC4P" en ASCII)     (int, big-endian)
-    [4 bytes]  version      = 1                                  (int)
-    [4 bytes]  inputSize                                          (int)
-    [4 bytes]  hiddenSize                                         (int)
-    [4 bytes]  outputSize                                         (int)
-    [4 bytes]  imageWidth                                         (int)
-    [4 bytes]  imageHeight                                        (int)
-    [hiddenSize * inputSize]   doubles (8 bytes c/u, big-endian)  -> W_ih[hidden][input]
-    [hiddenSize]               doubles                             -> bias_hidden
-    [outputSize * hiddenSize]  doubles                             -> W_ho[output][hidden]
-    [outputSize]               doubles                             -> bias_output
-    [4 bytes]  numClasses                                         (int)
-    por clase:
-        [2 bytes] longitud del nombre en UTF-8 (unsigned short, big-endian)
-        [N bytes] nombre en UTF-8
-
-Todo big-endian (">" en el modulo struct de Python), tal como lo escribe
-DataOutputStream en Java.
-"""
 
 import struct
 from dataclasses import dataclass

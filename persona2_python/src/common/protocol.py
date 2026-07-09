@@ -1,8 +1,4 @@
-"""
-Constantes y helpers del protocolo de aplicacion (por encima del framing de
-frame.py). Estos codigos DEBEN coincidir literalmente con
-cc4p1.common.ProtocolMessage (Java) y con el equivalente en C++.
-"""
+
 
 # --- Mensajes entre nodos Raft (peer-to-peer) ---
 REQUEST_VOTE = "RV"

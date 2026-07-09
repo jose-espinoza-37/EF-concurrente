@@ -1,21 +1,4 @@
-"""
-Implementacion del nodo Raft en Python. Es agnostica al lenguaje de sus
-peers: solo conoce el protocolo de texto de common/protocol.py y les habla
-via raft/peer_client.py, por eso puede convivir en el mismo cluster con
-nodos escritos en Java y C++ (mismo framing, mismos codigos de mensaje,
-misma logica de eleccion/replicacion).
 
-Concurrencia:
- - Un threading.RLock protege todo el estado mutable compartido (termino,
-   log, commitIndex, etc.) para evitar corrupcion cuando el hilo aceptador
-   de conexiones, el timer de eleccion y el bucle de heartbeat lo tocan al
-   mismo tiempo. Se usa RLock (reentrante) porque algunas rutas de codigo
-   (ej. _replicate_to_peer -> _become_follower) vuelven a pedir el lock
-   desde el mismo hilo.
- - Un ThreadPoolExecutor envia los RPC salientes (RequestVote/AppendEntries)
-   a todos los peers EN PARALELO, para que un peer lento o caido no bloquee
-   a los demas.
-"""
 
 import random
 import threading

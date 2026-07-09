@@ -1,12 +1,4 @@
-"""
-Una entrada del log replicado: un "encuentro" (evento de deteccion de
-objeto/animal/persona). El formato de codificacion DEBE coincidir con
-cc4p1.raft.LogEntry (Java):
 
-    index,term,camera,clase,timestamp,imagePath
-
-con las entradas completas separadas entre si por "~" (ProtocolMessage.ENTRY_SEP).
-"""
 
 from dataclasses import dataclass
 

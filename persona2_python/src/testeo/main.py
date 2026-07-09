@@ -1,7 +1,4 @@
-"""
-Uso:
-    python main.py [ruta_testing.properties]
-"""
+
 
 import sys
 

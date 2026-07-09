@@ -1,12 +1,4 @@
-"""
-Descarga el archivo de pesos entrenado desde el Servidor de Pesos (Java),
-usando el mismo framing (frame.py) y el protocolo documentado en
-cc4p1.pesos.WeightsServer:
 
-    Cliente  -> "GET_WEIGHTS"                        (un frame de texto)
-    Servidor -> "WEIGHTS_META|<tamano_en_bytes>"      (un frame de texto)
-    Servidor -> <tamano_en_bytes> bytes RAW del archivo (sin framing extra)
-"""
 
 import socket
 
