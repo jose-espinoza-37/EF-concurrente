@@ -1,10 +1,6 @@
 package cc4p1.common;
 
-/**
- * Constantes y helpers del protocolo de aplicacion (por encima del framing
- * de {@link Frame}). Estos codigos de mensaje deben coincidir byte a byte
- * con lo que implementen los nodos Python y C++.
- */
+
 public final class ProtocolMessage {
 
     private ProtocolMessage() {

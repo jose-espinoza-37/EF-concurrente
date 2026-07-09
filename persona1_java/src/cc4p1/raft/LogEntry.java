@@ -2,13 +2,7 @@ package cc4p1.raft;
 
 import cc4p1.common.ProtocolMessage;
 
-/**
- * Una entrada del log replicado por Raft: un "encuentro" (evento de
- * deteccion de objeto/animal/persona) generado por el Servidor de Testeo.
- *
- * Se serializa como texto plano separado por comas para poder viajar dentro
- * de un mensaje AppendEntries (varias entries se separan entre si con "~").
- */
+
 public class LogEntry {
 
     public final long index;

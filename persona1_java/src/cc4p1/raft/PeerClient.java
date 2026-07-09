@@ -6,12 +6,7 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 
-/**
- * Abre una conexion TCP corta hacia un peer, envia un mensaje del protocolo
- * y espera la respuesta. Si el peer no responde a tiempo (caido, red lenta,
- * particionado), se devuelve null y quien llama lo trata como un fallo
- * silencioso -- asi es como Raft tolera la caida de nodos.
- */
+
 public class PeerClient {
 
     private static final int CONNECT_TIMEOUT_MS = 300;

@@ -3,28 +3,12 @@ package cc4p1.entrenamiento;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Random;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
-/**
- * Servidor de Entrenamiento de IA (Persona 1 - Java).
- *
- * Uso:
- *   java cc4p1.entrenamiento.Main config/training.properties
- *
- * Logica de alto nivel:
- *   1. Carga el dataset de imagenes (una carpeta por clase).
- *   2. Reparte las muestras de entrenamiento en "threads" shards.
- *   3. En cada epoca, lanza un hilo por shard para calcular gradientes en
- *      PARALELO (cada hilo solo lee los pesos actuales, no los modifica).
- *   4. El hilo principal suma los gradientes de todos los shards y aplica
- *      UNA sola actualizacion de pesos por epoca (descenso de gradiente
- *      "data-parallel"). Esto demuestra el procesamiento concurrente y
- *      distribuido de la carga de entrenamiento que pide el enunciado.
- *   5. Al terminar, persiste los pesos entrenados en disco para que el
- *      Servidor de Testeo (Python) los consuma.
- */
+
 public class Main {
 
     public static void main(String[] args) throws Exception {
@@ -34,8 +18,17 @@ public class Main {
         System.out.println("=== Servidor de Entrenamiento de IA (Java) ===");
         System.out.println("Dataset: " + config.datasetPath);
         System.out.println("Hilos de entrenamiento: " + config.threads);
+        System.out.println("Augmentation: " + config.augmentationEnabled
+                + " (variantes por imagen real: " + config.augmentationVariantsPerImage + ")");
+        System.out.println("Momentum: " + config.momentum + "  L2: " + config.l2Regularization
+                + "  LR decay: x" + config.learningRateDecay + " cada " + config.learningRateDecayEvery + " epocas");
+        System.out.println("Validacion: " + (config.validationSplit * 100) + "% de cada clase, cada "
+                + config.validateEvery + " epocas. Early stopping: " + config.earlyStoppingEnabled
+                + " (paciencia=" + config.earlyStoppingPatience + ")");
 
-        ImageDataset dataset = ImageDataset.load(config.datasetPath, config.imageWidth, config.imageHeight);
+        ImageDataset dataset = ImageDataset.load(config.datasetPath, config.imageWidth, config.imageHeight,
+                config.augmentationEnabled, config.augmentationVariantsPerImage,
+                config.validationSplit, new Random(2024L));
         int n = dataset.classNames.size();
         if (n < 2) {
             throw new IllegalStateException("Se necesitan al menos 2 clases para entrenar (n>=2).");
@@ -50,8 +43,16 @@ public class Main {
         ExecutorService pool = Executors.newFixedThreadPool(config.threads);
         long start = System.currentTimeMillis();
 
+        double learningRate = config.learningRate;
+
+        NeuralNetwork.WeightSnapshot bestSnapshot = null;
+        double bestValLoss = Double.POSITIVE_INFINITY;
+        int evaluacionesSinMejora = 0;
+        boolean hayValidacion = !dataset.validationSamples.isEmpty();
+        int epocaFinal = config.epochs;
+
         for (int epoch = 1; epoch <= config.epochs; epoch++) {
-            Collections.shuffle(samples); // orden distinto cada epoca
+            Collections.shuffle(samples);
             shards = splitIntoShards(samples, config.threads);
 
             List<Future<NeuralNetwork.Gradients>> futures = new ArrayList<>();
@@ -63,21 +64,64 @@ public class Main {
             for (Future<NeuralNetwork.Gradients> f : futures) {
                 total.addInPlace(f.get());
             }
-            network.applyGradients(total, config.learningRate);
+            network.applyGradients(total, learningRate, config.momentum, config.l2Regularization);
 
-            if (epoch % 10 == 0 || epoch == 1 || epoch == config.epochs) {
+            if (config.learningRateDecayEvery > 0 && epoch % config.learningRateDecayEvery == 0) {
+                learningRate *= config.learningRateDecay;
+            }
+
+            boolean tocaValidar = hayValidacion
+                    && (epoch % config.validateEvery == 0 || epoch == 1 || epoch == config.epochs);
+
+            if (epoch % 10 == 0 || epoch == 1 || epoch == config.epochs || tocaValidar) {
                 double avgLoss = total.lossSum / total.count;
                 double acc = (100.0 * total.correct) / total.count;
-                System.out.printf("Epoca %4d/%d  loss=%.4f  accuracy=%.1f%%%n",
-                        epoch, config.epochs, avgLoss, acc);
+                StringBuilder linea = new StringBuilder();
+                linea.append(String.format("Epoca %4d/%d  train_loss=%.4f  train_acc=%.1f%%  lr=%.5f",
+                        epoch, config.epochs, avgLoss, acc, learningRate));
+
+                if (tocaValidar) {
+                    NeuralNetwork.EvalResult val = network.evaluate(dataset.validationSamples);
+                    linea.append(String.format("  |  val_loss=%.4f  val_acc=%.1f%%", val.avgLoss, val.accuracy));
+
+                    if (val.avgLoss < bestValLoss) {
+                        bestValLoss = val.avgLoss;
+                        bestSnapshot = network.snapshot();
+                        evaluacionesSinMejora = 0;
+                        linea.append("  <- mejor checkpoint hasta ahora");
+                    } else {
+                        evaluacionesSinMejora++;
+                    }
+                }
+                System.out.println(linea);
+
+                if (tocaValidar && config.earlyStoppingEnabled
+                        && evaluacionesSinMejora >= config.earlyStoppingPatience) {
+                    System.out.println("[EarlyStopping] La validacion no mejora hace "
+                            + evaluacionesSinMejora + " evaluaciones seguidas. Deteniendo en la epoca " + epoch + ".");
+                    epocaFinal = epoch;
+                    break;
+                }
             }
         }
         pool.shutdown();
 
         long elapsedMs = System.currentTimeMillis() - start;
-        System.out.println("Entrenamiento finalizado en " + elapsedMs + " ms.");
+        System.out.println("Entrenamiento finalizado en " + elapsedMs + " ms (epoca final: " + epocaFinal + ").");
 
-        ModelPersistence.save(network, dataset.classNames, config.imageWidth, config.imageHeight,
+        NeuralNetwork modeloAGuardar = network;
+        if (bestSnapshot != null) {
+            modeloAGuardar = NeuralNetwork.fromSnapshot(bestSnapshot);
+            System.out.println("Usando el MEJOR checkpoint de validacion (val_loss=" + bestValLoss
+                    + "), no necesariamente el de la ultima epoca.");
+        } else if (hayValidacion) {
+            System.out.println("AVISO: no se registro ningun checkpoint de validacion, se guarda el modelo final tal cual.");
+        } else {
+            System.out.println("AVISO: no hubo set de validacion (dataset muy chico o validation.split=0), "
+                    + "se guarda el modelo final tal cual, sin garantia de que generalice bien.");
+        }
+
+        ModelPersistence.save(modeloAGuardar, dataset.classNames, config.imageWidth, config.imageHeight,
                 config.modelOutputPath);
 
         System.out.println("Clases entrenadas (n=" + n + "): " + dataset.classNames);

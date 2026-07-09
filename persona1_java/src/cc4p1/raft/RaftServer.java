@@ -9,16 +9,7 @@ import java.net.Socket;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-/**
- * Acepta conexiones TCP entrantes de:
- *   - otros nodos Raft (RV / AE)          -> peer-to-peer
- *   - el Servidor de Testeo (PROPOSE)     -> cliente que escribe
- *   - el Cliente Vigilante (GET_LOG)      -> cliente que lee
- *
- * Usa un hilo por conexion (a traves de un ExecutorService) para que una
- * conexion lenta no bloquee a las demas, y para poder atender en paralelo
- * a las 3 camaras/servidores de testeo si el proyecto escala a mas nodos.
- */
+
 public class RaftServer implements Runnable {
 
     private final int port;

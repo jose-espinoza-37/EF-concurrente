@@ -6,34 +6,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Guarda / carga los pesos entrenados en un formato binario propio y simple
- * (sin depender de ninguna libreria de serializacion externa).
- *
- * FORMATO DEL ARCHIVO (todo big-endian, tal como escribe DataOutputStream):
- *   [4 bytes]  MAGIC        = 0x43433450  ("CC4P" en ASCII)
- *   [4 bytes]  version      = 1                (int)
- *   [4 bytes]  inputSize                        (int)
- *   [4 bytes]  hiddenSize                        (int)
- *   [4 bytes]  outputSize                        (int)
- *   [4 bytes]  imageWidth                        (int)
- *   [4 bytes]  imageHeight                        (int)
- *   [hiddenSize * inputSize]   doubles  -> weightsInputHidden[hidden][input], fila por fila
- *   [hiddenSize]               doubles  -> biasHidden
- *   [outputSize * hiddenSize]  doubles  -> weightsHiddenOutput[output][hidden], fila por fila
- *   [outputSize]               doubles  -> biasOutput
- *   [4 bytes]  numClasses                        (int)
- *   por cada clase:
- *       [2 bytes] longitud del nombre en UTF-8 (unsigned short, big-endian)
- *       [N bytes] nombre de la clase en UTF-8
- *
- * NOTA PARA EL SERVIDOR DE TESTEO (Python): este es exactamente el formato
- * que "struct" de Python debe leer con big-endian (">"): 5 enteros de 4
- * bytes, luego los doubles de 8 bytes en el orden indicado, y al final la
- * lista de nombres de clase (2 bytes de longitud + string UTF-8 -- para
- * nombres ASCII como "persona","perro","gato","carro" esto es identico a
- * UTF-8 estandar).
- */
+
 public final class ModelPersistence {
 
     private static final int MAGIC = 0x43433450; // "CC4P"
