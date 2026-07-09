@@ -12,8 +12,8 @@ VigilanteConfig VigilanteConfig::load(const std::string& path) {
         id = trim(id);
         NodeInfo node;
         node.id   = id;
-        node.host = props[id + ".host"];
-        node.port = std::stoi(props[id + ".port"]);
+        node.host = props["node." + id + ".host"];
+        node.port = std::stoi(props["node." + id + ".port"]);
         config.clusterNodes.push_back(node);
     }
 

@@ -14,8 +14,8 @@ RaftConfig RaftConfig::load(const std::string& selfId, const std::string& path) 
         id = trim(id);
         NodeInfo node;
         node.id   = id;
-        node.host = props[id + ".host"];
-        node.port = std::stoi(props[id + ".port"]);
+        node.host = props["node." + id + ".host"];
+        node.port = std::stoi(props["node." + id + ".port"]);
         config.allNodes[id] = node;
 
         if (id == selfId)

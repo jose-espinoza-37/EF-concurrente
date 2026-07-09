@@ -77,7 +77,7 @@ class ServidorDeTesteo:
             timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             timestamp_archivo = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
             nombre_archivo = "cam%d_%s_%s.bmp" % (camera_id, clase, timestamp_archivo)
-            ruta_imagen = os.path.join(self.config.capturas_dir, nombre_archivo)
+            ruta_imagen = "%s/%s" % (self.config.capturas_dir.rstrip("\\/"), nombre_archivo)
             save_bmp(ruta_imagen, width, height, rgb_bytes)
 
             indice = proponer_evento(self.cluster_config, camera_id, clase, timestamp, ruta_imagen)

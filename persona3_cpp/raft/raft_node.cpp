@@ -162,7 +162,7 @@ void RaftNode::becomeCandidate() {
         auto parts = split(*result, '|');
         if (parts.size() >= 3 && parts[0] == Protocol::REQUEST_VOTE_REPLY) {
             int replyTerm = std::stoi(parts[1]);
-            bool granted  = (parts[2] == "true");
+            bool granted  = (parts[2] == "1");
 
             if (replyTerm > currentTerm_) {
                 becomeFollower(replyTerm);
@@ -233,7 +233,7 @@ std::string RaftNode::handleRequestVote(const std::string& msg) {
     }
 
     return std::string(Protocol::REQUEST_VOTE_REPLY) + "|" +
-           std::to_string(currentTerm_) + "|" + (granted ? "true" : "false");
+           std::to_string(currentTerm_) + "|" + (granted ? "1" : "0");
 }
 
 // ── AppendEntries Handler ───────────────────────────────────
@@ -249,7 +249,7 @@ std::string RaftNode::handleAppendEntries(const std::string& msg) {
 
     if (term < currentTerm_) {
         return std::string(Protocol::APPEND_ENTRIES_REPLY) + "|" +
-               std::to_string(currentTerm_) + "|false|0";
+               std::to_string(currentTerm_) + "|0|0";
     }
 
     if (term > currentTerm_ || state_ != RaftState::FOLLOWER) {
@@ -262,12 +262,12 @@ std::string RaftNode::handleAppendEntries(const std::string& msg) {
     if (prevLogIndex > 0) {
         if (prevLogIndex > static_cast<int>(log_.size())) {
             return std::string(Protocol::APPEND_ENTRIES_REPLY) + "|" +
-                   std::to_string(currentTerm_) + "|false|0";
+                   std::to_string(currentTerm_) + "|0|0";
         }
         if (log_[prevLogIndex - 1].term != prevLogTerm) {
             log_.resize(static_cast<size_t>(prevLogIndex - 1));
             return std::string(Protocol::APPEND_ENTRIES_REPLY) + "|" +
-                   std::to_string(currentTerm_) + "|false|0";
+                   std::to_string(currentTerm_) + "|0|0";
         }
     }
 
@@ -293,7 +293,7 @@ std::string RaftNode::handleAppendEntries(const std::string& msg) {
 
     int matchIdx = static_cast<int>(log_.size());
     return std::string(Protocol::APPEND_ENTRIES_REPLY) + "|" +
-           std::to_string(currentTerm_) + "|true|" + std::to_string(matchIdx);
+           std::to_string(currentTerm_) + "|1|" + std::to_string(matchIdx);
 }
 
 // ── Propose Handler ─────────────────────────────────────────
@@ -303,9 +303,9 @@ std::string RaftNode::handlePropose(const std::string& msg) {
         if (!currentLeaderId_.empty() && config_.allNodes.count(currentLeaderId_)) {
             auto& leader = config_.allNodes.at(currentLeaderId_);
             return std::string(Protocol::PROPOSE_REDIRECT) + "|" +
-                   leader.host + ":" + std::to_string(leader.port);
+                   leader.host + "|" + std::to_string(leader.port);
         }
-        return std::string(Protocol::PROPOSE_REDIRECT) + "|";
+        return std::string(Protocol::PROPOSE_REDIRECT) + "|NONE|0";
     }
 
     auto parts = split(msg, '|');
@@ -392,7 +392,7 @@ void RaftNode::replicateToAllPeers() {
         auto parts = split(*reply.response, '|');
         if (parts.size() >= 3 && parts[0] == Protocol::APPEND_ENTRIES_REPLY) {
             int replyTerm = std::stoi(parts[1]);
-            bool success  = (parts[2] == "true");
+            bool success  = (parts[2] == "1");
 
             if (replyTerm > currentTerm_) {
                 becomeFollower(replyTerm);
