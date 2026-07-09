@@ -2,15 +2,7 @@ package cc4p1.raft;
 
 import java.util.concurrent.TimeUnit;
 
-/**
- * Punto de entrada del Nodo Raft #1 (Java).
- *
- * Uso:
- *   java cc4p1.raft.RaftNodeMain <selfId> <rutaClusterProperties>
- *
- * Ejemplo:
- *   java cc4p1.raft.RaftNodeMain java1 config/cluster.properties
- */
+
 public class RaftNodeMain {
 
     public static void main(String[] args) throws Exception {

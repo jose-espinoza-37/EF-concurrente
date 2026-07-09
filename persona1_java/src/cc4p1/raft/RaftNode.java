@@ -10,21 +10,7 @@ import java.util.Random;
 import java.util.concurrent.*;
 import java.util.concurrent.locks.ReentrantLock;
 
-/**
- * Implementacion del nodo Raft. Es agnostica al lenguaje de los peers: solo
- * conoce el protocolo de texto de {@link ProtocolMessage} y habla con ellos
- * via {@link PeerClient}, por eso puede convivir en el mismo cluster con
- * nodos escritos en Python y C++.
- *
- * Concurrencia:
- *  - Un {@link ReentrantLock} protege todo el estado mutable compartido
- *    (term, log, commitIndex, etc.) para evitar corrupcion cuando varios
- *    hilos (el aceptador de conexiones, el timer de eleccion y el heartbeat)
- *    lo tocan al mismo tiempo.
- *  - Un {@link ExecutorService} envia los RPC salientes (RequestVote /
- *    AppendEntries) a todos los peers EN PARALELO, para que un peer lento o
- *    caido no bloquee a los demas.
- */
+
 public class RaftNode {
 
     private static final long ELECTION_TIMEOUT_MIN_MS = 1500;

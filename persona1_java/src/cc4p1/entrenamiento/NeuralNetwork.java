@@ -3,22 +3,6 @@ package cc4p1.entrenamiento;
 import java.util.List;
 import java.util.Random;
 
-/**
- * Perceptron multicapa (1 capa oculta) implementado desde cero, usando
- * unicamente arrays de Java (sin librerias externas de ML), tal como pide
- * el enunciado ("usar como base las librerias que vienen con el lenguaje").
- *
- * Arquitectura:
- *   entrada (pixeles normalizados) -> oculta (sigmoide) -> salida (softmax)
- *
- * El calculo de gradientes de un lote (computeGradients) es una operacion
- * de SOLO LECTURA sobre los pesos actuales: no modifica el estado de la
- * red. Esto permite que varios hilos calculen gradientes de distintos
- * "shards" del dataset EN PARALELO sin necesidad de sincronizacion, y que
- * el hilo principal sume esos gradientes y aplique la actualizacion una
- * sola vez por epoca (descenso de gradiente por lotes, paralelizado
- * "data-parallel").
- */
 public class NeuralNetwork {
 
     public final int inputSize;
@@ -30,6 +14,12 @@ public class NeuralNetwork {
     private final double[][] weightsHiddenOutput;  // [output][hidden]
     private final double[] biasOutput;             // [output]
 
+
+    private final double[][] velocityWih;
+    private final double[] velocityBh;
+    private final double[][] velocityWho;
+    private final double[] velocityBo;
+
     public NeuralNetwork(int inputSize, int hiddenSize, int outputSize, long seed) {
         this.inputSize = inputSize;
         this.hiddenSize = hiddenSize;
@@ -40,6 +30,11 @@ public class NeuralNetwork {
         this.biasHidden = new double[hiddenSize];
         this.weightsHiddenOutput = new double[outputSize][hiddenSize];
         this.biasOutput = new double[outputSize];
+
+        this.velocityWih = new double[hiddenSize][inputSize];
+        this.velocityBh = new double[hiddenSize];
+        this.velocityWho = new double[outputSize][hiddenSize];
+        this.velocityBo = new double[outputSize];
 
         double scaleIH = Math.sqrt(2.0 / inputSize);
         double scaleHO = Math.sqrt(2.0 / hiddenSize);
@@ -55,7 +50,7 @@ public class NeuralNetwork {
         }
     }
 
-    /** Constructor usado al cargar un modelo ya entrenado desde disco. */
+    /** Constructor usado al cargar un modelo ya entrenado desde disco (no necesita estado de optimizador). */
     public NeuralNetwork(double[][] wih, double[] bh, double[][] who, double[] bo) {
         this.hiddenSize = wih.length;
         this.inputSize = wih[0].length;
@@ -64,6 +59,11 @@ public class NeuralNetwork {
         this.biasHidden = bh;
         this.weightsHiddenOutput = who;
         this.biasOutput = bo;
+
+        this.velocityWih = new double[hiddenSize][inputSize];
+        this.velocityBh = new double[hiddenSize];
+        this.velocityWho = new double[outputSize][hiddenSize];
+        this.velocityBo = new double[outputSize];
     }
 
     private static double sigmoid(double x) {
@@ -140,7 +140,6 @@ public class NeuralNetwork {
             dBo = new double[outputSize];
         }
 
-        /** Suma "otro" dentro de este acumulador (usado para combinar resultados de varios hilos). */
         public void addInPlace(Gradients other) {
             for (int j = 0; j < dWih.length; j++)
                 for (int i = 0; i < dWih[j].length; i++)
@@ -158,11 +157,9 @@ public class NeuralNetwork {
 
     /**
      * Calcula (sin modificar la red) los gradientes acumulados para un
-     * shard del dataset. Metodo seguro para llamar concurrentemente desde
-     * varios hilos sobre la MISMA instancia de NeuralNetwork, siempre que
-     * nadie este llamando a applyGradients al mismo tiempo (el orquestador
-     * de entrenamiento se encarga de esa exclusion: primero todos los
-     * hilos calculan, despues -y solo despues- se aplica la actualizacion).
+     * shard del dataset. Seguro para llamar concurrentemente desde varios
+     * hilos sobre la MISMA instancia de NeuralNetwork, siempre que nadie
+     * este llamando a applyGradients al mismo tiempo.
      */
     public Gradients computeGradients(List<Sample> shard) {
         Gradients g = new Gradients(hiddenSize, inputSize, outputSize);
@@ -175,7 +172,7 @@ public class NeuralNetwork {
             double[] target = new double[outputSize];
             target[sample.label] = 1.0;
 
-            double[] dz = new double[outputSize]; // derivada softmax+cross-entropy
+            double[] dz = new double[outputSize];
             for (int k = 0; k < outputSize; k++) dz[k] = output[k] - target[k];
 
             for (int k = 0; k < outputSize; k++) {
@@ -189,7 +186,7 @@ public class NeuralNetwork {
             for (int j = 0; j < hiddenSize; j++) {
                 double sum = 0;
                 for (int k = 0; k < outputSize; k++) sum += dz[k] * weightsHiddenOutput[k][j];
-                dHidden[j] = sum * hidden[j] * (1 - hidden[j]); // derivada sigmoide
+                dHidden[j] = sum * hidden[j] * (1 - hidden[j]);
             }
 
             for (int j = 0; j < hiddenSize; j++) {
@@ -213,22 +210,103 @@ public class NeuralNetwork {
         return best;
     }
 
-    /** Aplica el gradiente promedio del lote a los pesos (descenso de gradiente). Llamar SOLO desde el hilo principal. */
-    public void applyGradients(Gradients g, double learningRate) {
+    /**
+     * Aplica el gradiente promedio del lote a los pesos, con momentum y
+     * regularizacion L2. Llamar SOLO desde el hilo principal (no es
+     * thread-safe, no hace falta que lo sea: se llama una vez por epoca,
+     * despues de que todos los hilos de computeGradients ya terminaron).
+     *
+     * @param momentum      factor de inercia de la velocidad acumulada (ej. 0.9). 0 = SGD clasico sin momentum.
+     * @param l2Regularization intensidad de weight decay (ej. 0.0005). 0 = sin regularizacion.
+     */
+    public void applyGradients(Gradients g, double learningRate, double momentum, double l2Regularization) {
         if (g.count == 0) return;
         double scale = learningRate / g.count;
+
         for (int j = 0; j < hiddenSize; j++) {
             for (int i = 0; i < inputSize; i++) {
-                weightsInputHidden[j][i] -= scale * g.dWih[j][i];
+                double grad = scale * g.dWih[j][i] + l2Regularization * weightsInputHidden[j][i];
+                velocityWih[j][i] = momentum * velocityWih[j][i] - grad;
+                weightsInputHidden[j][i] += velocityWih[j][i];
             }
-            biasHidden[j] -= scale * g.dBh[j];
+            double gradB = scale * g.dBh[j];
+            velocityBh[j] = momentum * velocityBh[j] - gradB;
+            biasHidden[j] += velocityBh[j];
         }
         for (int k = 0; k < outputSize; k++) {
             for (int j = 0; j < hiddenSize; j++) {
-                weightsHiddenOutput[k][j] -= scale * g.dWho[k][j];
+                double grad = scale * g.dWho[k][j] + l2Regularization * weightsHiddenOutput[k][j];
+                velocityWho[k][j] = momentum * velocityWho[k][j] - grad;
+                weightsHiddenOutput[k][j] += velocityWho[k][j];
             }
-            biasOutput[k] -= scale * g.dBo[k];
+            double gradB = scale * g.dBo[k];
+            velocityBo[k] = momentum * velocityBo[k] - gradB;
+            biasOutput[k] += velocityBo[k];
         }
+    }
+
+    /** Sobrecarga de compatibilidad: descenso de gradiente simple, sin momentum ni L2. */
+    public void applyGradients(Gradients g, double learningRate) {
+        applyGradients(g, learningRate, 0.0, 0.0);
+    }
+
+    /** Resultado de evaluar la red sobre un conjunto de datos SIN modificar los pesos. */
+    public static class EvalResult {
+        public final double avgLoss;
+        public final double accuracy; // 0..100
+
+        public EvalResult(double avgLoss, double accuracy) {
+            this.avgLoss = avgLoss;
+            this.accuracy = accuracy;
+        }
+    }
+
+    /**
+     * Evalua la red sobre un conjunto de muestras (tipicamente el set de
+     * VALIDACION) sin tocar los pesos -- solo forward pass, ningun gradiente.
+     */
+    public EvalResult evaluate(List<Sample> data) {
+        if (data.isEmpty()) return new EvalResult(0.0, 0.0);
+        double lossSum = 0;
+        int correct = 0;
+        for (Sample s : data) {
+            double[] probs = predict(s.features);
+            double p = Math.max(probs[s.label], 1e-12);
+            lossSum += -Math.log(p);
+            if (s.label == argmax(probs)) correct++;
+        }
+        return new EvalResult(lossSum / data.size(), 100.0 * correct / data.size());
+    }
+
+    /** Copia profunda de los pesos actuales (NO incluye el estado de momentum). */
+    public static class WeightSnapshot {
+        public final double[][] wih;
+        public final double[] bh;
+        public final double[][] who;
+        public final double[] bo;
+
+        WeightSnapshot(double[][] wih, double[] bh, double[][] who, double[] bo) {
+            this.wih = wih;
+            this.bh = bh;
+            this.who = who;
+            this.bo = bo;
+        }
+    }
+
+    public WeightSnapshot snapshot() {
+        return new WeightSnapshot(deepCopy(weightsInputHidden), biasHidden.clone(),
+                deepCopy(weightsHiddenOutput), biasOutput.clone());
+    }
+
+    /** Reconstruye una NeuralNetwork "congelada" a partir de un snapshot previo, lista para guardar/predecir. */
+    public static NeuralNetwork fromSnapshot(WeightSnapshot snap) {
+        return new NeuralNetwork(snap.wih, snap.bh, snap.who, snap.bo);
+    }
+
+    private static double[][] deepCopy(double[][] src) {
+        double[][] copy = new double[src.length][];
+        for (int i = 0; i < src.length; i++) copy[i] = src[i].clone();
+        return copy;
     }
 
     public double[][] getWeightsInputHidden() { return weightsInputHidden; }

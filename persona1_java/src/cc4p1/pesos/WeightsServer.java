@@ -11,21 +11,7 @@ import java.nio.file.Paths;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-/**
- * Expone por socket el archivo de pesos ya entrenado (ver
- * {@link cc4p1.entrenamiento.ModelPersistence} para el formato del archivo),
- * para que el Servidor de Testeo (tipicamente en Python, en otra maquina/SO)
- * lo pueda descargar sin necesidad de un filesystem compartido.
- *
- * Protocolo (sobre el mismo framing de {@link Frame}):
- *   Cliente  -> "GET_WEIGHTS"                       (un Frame de texto)
- *   Servidor -> "WEIGHTS_META|<tamano_en_bytes>"      (un Frame de texto)
- *   Servidor -> <tamano_en_bytes> bytes RAW del archivo (sin framing extra,
- *               el receptor ya sabe cuantos bytes leer por el paso anterior)
- *
- * Atiende conexiones concurrentes con un pool de hilos: varias instancias
- * del Servidor de Testeo (o reintentos) pueden descargar el modelo a la vez.
- */
+
 public class WeightsServer implements Runnable {
 
     private final int port;

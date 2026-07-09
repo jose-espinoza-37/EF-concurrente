@@ -10,19 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
-/**
- * Lee config/cluster.properties: la lista de nodos que forman el cluster
- * Raft (uno en Java, uno en Python, uno en C++) con su host:puerto.
- *
- * Formato del archivo:
- *   cluster.nodes=java1,python1,cpp1
- *   node.java1.host=192.168.1.10
- *   node.java1.port=6001
- *   node.python1.host=192.168.1.20
- *   node.python1.port=6002
- *   node.cpp1.host=192.168.1.10
- *   node.cpp1.port=6003
- */
+
 public class RaftConfig {
 
     public static class PeerInfo {

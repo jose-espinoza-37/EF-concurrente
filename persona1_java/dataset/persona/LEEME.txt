@@ -1,4 +1,0 @@
-Coloca aqui las fotos reales de la clase "persona" (formato .jpg, .jpeg o .png).
-Si esta carpeta esta vacia, el programa generara automaticamente imagenes
-sinteticas de prueba SOLO para poder ejecutar y probar el pipeline; para la
-entrega real deben reemplazarlas por fotografias verdaderas.

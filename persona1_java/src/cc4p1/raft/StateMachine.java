@@ -5,16 +5,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-/**
- * Maquina de estados de Raft: aplica las entradas ya comprometidas (commit)
- * y mantiene el registro de "encuentros" que finalmente consulta el
- * Cliente Vigilante.
- *
- * Se protege con un ReadWriteLock: permite que varias lecturas concurrentes
- * (varios clientes vigilantes consultando GET_LOG a la vez) no se bloqueen
- * entre si, pero garantiza exclusividad al escribir para evitar
- * corrupcion del registro cuando se aplican nuevas entradas.
- */
+
 public class StateMachine {
 
     private final List<LogEntry> encounters = new ArrayList<>();
