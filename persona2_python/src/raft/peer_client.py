@@ -1,10 +1,4 @@
-"""
-Abre una conexion TCP corta hacia un peer, envia un mensaje del protocolo y
-espera la respuesta. Si el peer no responde a tiempo (caido, red lenta,
-particionado), se devuelve None -- exactamente igual que PeerClient.java --
-y quien llama lo trata como un fallo silencioso, que es como Raft tolera
-fallos sin bloquearse.
-"""
+
 
 import socket
 from typing import Optional

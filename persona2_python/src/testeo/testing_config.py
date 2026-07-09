@@ -1,7 +1,4 @@
-"""
-Lee config/testing.properties: donde estan las camaras, donde esta el
-Servidor de Pesos (Java) y parametros de inferencia.
-"""
+
 
 from typing import Dict, List
 

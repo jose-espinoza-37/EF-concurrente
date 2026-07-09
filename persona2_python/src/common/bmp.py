@@ -1,27 +1,10 @@
-"""
-La biblioteca estandar de Python (a diferencia de javax.imageio en Java) NO
-trae ningun codec de imagenes (ni JPEG ni PNG). Como el enunciado exige usar
-solo las librerias base del lenguaje, en vez de instalar Pillow/OpenCV se
-implementa aqui un escritor de archivos BMP minimo: el formato BMP sin
-compresion es, en esencia, un encabezado de tamaño fijo seguido de los
-pixeles crudos, algo perfectamente escribible a mano con el modulo `struct`
-de la biblioteca estandar.
 
-Esto es EXACTAMENTE el mismo espiritu que ImageDataset.java: usar solo lo que
-trae el lenguaje "de fabrica", documentando el formato en vez de depender de
-una libreria externa.
-"""
 
 import struct
 
 
 def save_bmp(path: str, width: int, height: int, rgb_bytes: bytes) -> None:
-    """
-    Guarda una imagen RGB cruda (rgb_bytes = width*height*3 bytes, fila por
-    fila, de arriba hacia abajo, 1 byte por canal R,G,B) como un archivo
-    .bmp de 24 bits por pixel, valido y abrible por cualquier visor de
-    imagenes estandar.
-    """
+   
     if len(rgb_bytes) != width * height * 3:
         raise ValueError("rgb_bytes no tiene el tamano esperado (width*height*3)")
 

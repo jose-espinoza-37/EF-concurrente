@@ -1,12 +1,4 @@
-"""
-Punto de entrada del Nodo Raft #2 (Python).
 
-Uso:
-    python raft_node_main.py <selfId> <rutaClusterProperties>
-
-Ejemplo:
-    python raft_node_main.py python1 config/cluster.properties
-"""
 
 import sys
 import threading

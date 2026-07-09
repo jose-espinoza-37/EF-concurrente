@@ -1,9 +1,4 @@
-"""
-El Servidor de Testeo NO es un nodo Raft: es un CLIENTE del cluster Raft.
-Este modulo implementa el mismo patron "probar un nodo, seguir el redirect
-si no es el lider" que ya se probo funcionando entre Java y Python durante
-el desarrollo (ver README para el detalle de esa prueba).
-"""
+
 
 import time
 from typing import Optional

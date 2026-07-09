@@ -1,24 +1,4 @@
-"""
-Simulador de una camara IP (celular/tablet).
 
-En el despliegue real, este proceso corre en el propio celular/tablet (o en
-una laptop conectada a su camara) y transmite el video real. Como la
-biblioteca estandar de Python no incluye captura de camara ni codecs de
-imagen, y el enunciado pide no usar librerias externas, ESTE script genera
-frames SINTETICOS (igual de espiritu que la generacion sintetica de
-ImageDataset.java del lado del entrenamiento) solo para poder probar de
-punta a punta el resto del pipeline (recepcion -> inferencia -> Raft ->
-Cliente Vigilante) sin depender de hardware de camara todavia.
-
-Para el despliegue real: reemplazar unicamente la funcion `generar_frame()`
-por la captura real de la camara del dispositivo (por ejemplo, leyendo el
-stream de una app tipo "IP Webcam" en el celular) -- el resto del protocolo
-de red (como se empaqueta y envia cada frame) NO cambia.
-
-Actua como servidor: queda escuchando en un puerto y, por cada conexion
-entrante (tipicamente la del Servidor de Testeo), envia un frame nuevo cada
-`intervalo_segundos`.
-"""
 
 import argparse
 import random

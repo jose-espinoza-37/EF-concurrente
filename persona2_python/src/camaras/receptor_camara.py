@@ -1,20 +1,3 @@
-"""
-Recibe el video de las cámaras IP (celular/tablet). Cada cámara real (una
-app de streaming en el telefono, o una camara IP de verdad) actua como un
-pequeño SERVIDOR de sockets en su propia direccion IP; este modulo actua
-como CLIENTE: se conecta a cada camara y queda leyendo frames en un bucle,
-uno por hilo, para no bloquear la recepcion de una camara mientras se
-procesa otra.
-
-Sub-protocolo de cada frame (payload dentro de un frame de frame.py):
-    [4 bytes] width   (entero sin signo, big-endian)
-    [4 bytes] height  (entero sin signo, big-endian)
-    [width*height*3 bytes] pixeles RGB crudos, fila por fila
-
-Si la conexion con una camara se cae, este modulo reintenta conectarse cada
-pocos segundos indefinidamente (tolerancia a fallos de una camara individual,
-independiente de las demas y del cluster Raft).
-"""
 
 import socket
 import struct

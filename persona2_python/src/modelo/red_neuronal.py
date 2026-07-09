@@ -1,13 +1,4 @@
-"""
-Ejecuta la INFERENCIA (forward-pass) del modelo entrenado por la Persona 1
-(Java). No se reentrena nada aqui: los pesos ya vienen calculados en el
-archivo binario (ver model_loader.py). Se implementa con listas planas de
-Python y el modulo `math`, sin numpy ni ninguna libreria externa, para
-mantener la misma restriccion de "solo librerias base" que el lado Java.
 
-Arquitectura (debe coincidir con NeuralNetwork.java):
-    entrada -> capa oculta (sigmoide) -> capa de salida (softmax)
-"""
 
 import math
 from typing import List

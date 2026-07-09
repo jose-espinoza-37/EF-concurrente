@@ -1,15 +1,4 @@
-"""
-Servidor de Testeo de Objetos (Persona 2 - Python).
 
-Logica de alto nivel (ver README para el detalle):
-  1. Descarga el modelo entrenado desde el Servidor de Pesos (Java).
-  2. Levanta un hilo receptor por cada camara IP configurada.
-  3. Por cada frame que llega de una camara (en su propio hilo):
-       a. Lo redimensiona si hace falta al tamaño esperado por el modelo.
-       b. Corre inferencia (forward-pass) sobre la red ya entrenada.
-       c. Si la confianza supera el umbral, guarda la imagen (.bmp) y
-          propone el evento al cluster Raft (con reintento/redirect al lider).
-"""
 
 import os
 import time
